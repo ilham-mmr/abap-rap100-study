@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "SAP Object Type ZRAP100_TRAV",
+    "originalLanguage": "en",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "typeCategory": "businessObject",
+  "name": "ZRAP100_TRAV"
+}
