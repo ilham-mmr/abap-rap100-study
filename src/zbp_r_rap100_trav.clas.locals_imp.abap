@@ -28,6 +28,8 @@ CLASS lhc_zr_rap100_trav DEFINITION INHERITING FROM cl_abap_behavior_handler.
 
     METHODS rejectTravel FOR MODIFY
       IMPORTING keys FOR ACTION ZrRap100Trav~rejectTravel RESULT result.
+    METHODS get_instance_features FOR INSTANCE FEATURES
+      IMPORTING keys REQUEST requested_features FOR ZrRap100Trav RESULT result.
 ENDCLASS.
 
 CLASS lhc_zr_rap100_trav IMPLEMENTATION.
@@ -400,7 +402,7 @@ CLASS lhc_zr_rap100_trav IMPLEMENTATION.
 * Instance-bound non-factory action: Set the overall travel status to 'X' (rejected)
 *************************************************************************************
   METHOD rejectTravel.
-   " modify travel instance
+    " modify travel instance
     MODIFY ENTITIES OF zr_rap100_trav IN LOCAL MODE
        ENTITY ZrRap100Trav
        UPDATE FIELDS ( OverallStatus )
@@ -420,5 +422,38 @@ CLASS lhc_zr_rap100_trav IMPLEMENTATION.
     result = VALUE #( FOR travel IN travels ( %tky   = travel-%tky
                                              %param = travel ) ).
   ENDMETHOD.
+
+**************************************************************************
+* Instance-based dynamic feature control
+**************************************************************************
+  METHOD get_instance_features.
+    " read relevant travel instance data
+    READ ENTITIES OF ZR_rap100_trav IN LOCAL MODE
+      ENTITY ZrRap100Trav
+        FIELDS ( TravelID OverallStatus )
+        WITH CORRESPONDING #( keys )
+      RESULT DATA(travels)
+      FAILED failed.
+
+    " evaluate the conditions, set the operation state, and set result parameter
+    result = VALUE #( FOR travel IN travels
+                      ( %tky                   = travel-%tky
+
+                        %features-%update      = COND #( WHEN travel-OverallStatus = travel_status-accepted
+                                                        THEN if_abap_behv=>fc-o-disabled ELSE if_abap_behv=>fc-o-enabled   )
+                        %features-%delete      = COND #( WHEN travel-OverallStatus = travel_status-open
+                                                        THEN if_abap_behv=>fc-o-enabled ELSE if_abap_behv=>fc-o-disabled   )
+                        %action-Edit           = COND #( WHEN travel-OverallStatus = travel_status-accepted
+                                                         THEN if_abap_behv=>fc-o-disabled ELSE if_abap_behv=>fc-o-enabled   )
+                        %action-acceptTravel   = COND #( WHEN travel-OverallStatus = travel_status-accepted
+                                                          THEN if_abap_behv=>fc-o-disabled ELSE if_abap_behv=>fc-o-enabled   )
+                        %action-rejectTravel   = COND #( WHEN travel-OverallStatus = travel_status-rejected
+                                                          THEN if_abap_behv=>fc-o-disabled ELSE if_abap_behv=>fc-o-enabled   )
+                        %action-deductDiscount = COND #( WHEN travel-OverallStatus = travel_status-open
+                                                          THEN if_abap_behv=>fc-o-enabled ELSE if_abap_behv=>fc-o-disabled   )
+                    ) ).
+
+  ENDMETHOD.
+
 
 ENDCLASS.
