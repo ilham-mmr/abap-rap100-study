@@ -11,29 +11,40 @@ lock master total etag LastChangedAt
 authorization master ( global )
 early numbering
 {
-  //  field ( mandatory : create )
-  //  TravelID;
-
   field ( readonly )
   CreatedBy,
   CreatedAt,
   LocalLastChangedBy,
   LocalLastChangedAt,
-  LastChangedAt,
+  LastChangedAt;
+
+  field ( readonly )
   TravelID;
 
-  //  field ( readonly : update )
-  //  TravelID;
+  field ( mandatory )
+  CustomerID,
+  BeginDate,
+  EndDate;
+
 
   create;
   update;
   delete;
 
+  determination setStatusOpen on modify { create; }
+
+  validation validateCustomer on save { create; field CustomerID; }
+  validation validateDates on save { create; field BeginDate, EndDate; }
+
   draft action Activate optimized;
   draft action Discard;
   draft action Edit;
   draft action Resume;
-  draft determine action Prepare;
+  draft determine action Prepare
+  {
+    validation validateCustomer;
+    validation validateDates; }
+
 
   mapping for zrap100_trav corresponding extensible
     {
